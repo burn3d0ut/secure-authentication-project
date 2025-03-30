@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Password Reset - Vulnerable Auth Demo</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <div class="container">
+        <div class="auth-form">
+            <h1>Password Reset</h1>
+            <div id="message" class="message"></div>
+            
+            <!-- Step 1: Request Password Reset -->
+            <form id="request-reset-form">
+                <div class="form-group">
+                    <label for="email">Email</label>
+                    <input type="email" id="email" name="email" required>
+                </div>
+                
+                <div class="form-actions">
+                    <button type="submit">Request Reset Token</button>
+                    <a href="index.html">Back to Login</a>
+                </div>
+            </form>
+            
+            <!-- Step 2: Verify Token -->
+            <form id="verify-token-form" style="display: none;">
+                <div class="form-group">
+                    <label for="verify-email">Email</label>
+                    <input type="email" id="verify-email" name="email" required readonly>
+                </div>
+                
+                <div class="form-group">
+                    <label for="token">Enter Reset Token</label>
+                    <input type="text" id="token" name="token" required>
+                </div>
+                
+                <div class="form-actions">
+                    <button type="submit">Verify Token</button>
+                    <a href="index.html">Back to Login</a>
+                </div>
+            </form>
+            
+            <!-- Step 3: Set New Password -->
+            <form id="reset-password-form" style="display: none;">
+                <div class="form-group">
+                    <label for="reset-email">Email</label>
+                    <input type="email" id="reset-email" name="email" required readonly>
+                </div>
+                
+                <div class="form-group">
+                    <label for="reset-token">Token</label>
+                    <input type="text" id="reset-token" name="token" required readonly>
+                </div>
+                
+                <div class="form-group">
+                    <label for="new-password">New Password</label>
+                    <input type="password" id="new-password" name="newPassword" required>
+                </div>
+                
+                <div class="form-actions">
+                    <button type="submit">Reset Password</button>
+                    <a href="index.html">Back to Login</a>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const messageElement = document.getElementById('message');
+            const requestResetForm = document.getElementById('request-reset-form');
+            const verifyTokenForm = document.getElementById('verify-token-form');
+            const resetPasswordForm = document.getElementById('reset-password-form');
+            
+            // Step 1: Handle password reset request
+            requestResetForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                const email = document.getElementById('email').value;
+                
+                fetch('/api/reset-password-request', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ email })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        // Still vulnerable: token is in the response but not displayed
+                        // Someone using dev tools or a proxy can still see it
+                        console.log("Token received:", data.token); // Deliberately logging to console
+                        
+                        messageElement.textContent = 'Reset token sent! Check your email or console for the token.';
+                        messageElement.className = 'message success-message';
+                        
+                        // Hide request form and show verify token form
+                        requestResetForm.style.display = 'none';
+                        verifyTokenForm.style.display = 'block';
+                        
+                        // Pre-fill email field
+                        document.getElementById('verify-email').value = email;
+                    } else {
+                        messageElement.textContent = data.error || 'An error occurred';
+                        messageElement.className = 'message error-message';
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    messageElement.textContent = 'Failed to request password reset.';
+                    messageElement.className = 'message error-message';
+                });
+            });
+            
+            // Step 2: Handle token verification
+            verifyTokenForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                const email = document.getElementById('verify-email').value;
+                const token = document.getElementById('token').value;
+                
+                // Actually verify the token with the server
+                // We'll create a temporary endpoint for verification
+                fetch('/api/verify-reset-token', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ email, token })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        messageElement.textContent = 'Token accepted. Enter your new password.';
+                        messageElement.className = 'message success-message';
+                        
+                        // Hide verify form and show password reset form
+                        verifyTokenForm.style.display = 'none';
+                        resetPasswordForm.style.display = 'block';
+                        
+                        // Pre-fill fields
+                        document.getElementById('reset-email').value = email;
+                        document.getElementById('reset-token').value = token;
+                    } else {
+                        messageElement.textContent = data.error || 'Invalid token. Please try again.';
+                        messageElement.className = 'message error-message';
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    messageElement.textContent = 'Failed to verify token.';
+                    messageElement.className = 'message error-message';
+                    
+                    // Fallback for if the verify endpoint doesn't exist
+                    // We'll use the reset-password endpoint to test the token
+                    fetch('/api/reset-password', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ email, token, newPassword: 'temp-password-123' })
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            messageElement.textContent = 'Token verified. Enter your new password.';
+                            messageElement.className = 'message success-message';
+                            
+                            // Hide verify form and show password reset form
+                            verifyTokenForm.style.display = 'none';
+                            resetPasswordForm.style.display = 'block';
+                            
+                            // Pre-fill fields
+                            document.getElementById('reset-email').value = email;
+                            document.getElementById('reset-token').value = token;
+                        } else {
+                            messageElement.textContent = 'Invalid token. Please try again.';
+                            messageElement.className = 'message error-message';
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error in fallback verification:', error);
+                        messageElement.textContent = 'Failed to verify token.';
+                        messageElement.className = 'message error-message';
+                    });
+                });
+            });
+            
+            // Step 3: Handle password reset
+            resetPasswordForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                const email = document.getElementById('reset-email').value;
+                const token = document.getElementById('reset-token').value;
+                const newPassword = document.getElementById('new-password').value;
+                
+                fetch('/api/reset-password', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ email, token, newPassword })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        messageElement.textContent = 'Password has been updated successfully!';
+                        messageElement.className = 'message success-message';
+                        
+                        // Redirect to login page after a short delay
+                        setTimeout(() => {
+                            window.location.href = 'index.html';
+                        }, 2000);
+                    } else {
+                        messageElement.textContent = data.error || 'Failed to reset password.';
+                        messageElement.className = 'message error-message';
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    messageElement.textContent = 'Failed to reset password.';
+                    messageElement.className = 'message error-message';
+                });
+            });
+        });
+    </script>
+</body>
+</html>
