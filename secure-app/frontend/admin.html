@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'">
+    <meta http-equiv="X-XSS-Protection" content="1; mode=block">
+    <meta http-equiv="X-Frame-Options" content="DENY">
+    <meta http-equiv="X-Content-Type-Options" content="nosniff">
+    <title>Admin Dashboard - Secure Auth Demo</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <div class="container">
+        <div class="dashboard">
+            <div class="dashboard-header">
+                <h1>Admin Dashboard</h1>
+                <div>
+                    <button id="change-password-btn">Change Password</button>
+                    <button id="logout-btn">Logout</button>
+                </div>
+            </div>
+            
+            <div class="welcome-message">
+                <h2>Welcome, <span id="user-name">User</span>!</h2>
+                <p>This is a secure dashboard with proper authentication and authorization.</p>
+            </div>
+            
+            <div id="error-message" class="error-message" style="display: none;"></div>
+            <div id="success-message" class="success-message" style="display: none;"></div>
+            
+            <div class="dashboard-content">
+                <h3>User Management</h3>
+                <button id="load-users-btn">Load All Users</button>
+                
+                <div class="user-list-container">
+                    <table id="user-table">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Username</th>
+                                <th>Email</th>
+                                <th>Admin Status</th>
+                            </tr>
+                        </thead>
+                        <tbody id="user-list">
+                            <!-- User data will be loaded here -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            
+            <!-- Change Password Modal -->
+            <div id="password-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5); z-index: 100;">
+                <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background-color: white; padding: 20px; border-radius: 5px; min-width: 300px;">
+                    <h2>Change Password</h2>
+                    <form id="change-password-form">
+                        <div class="form-group">
+                            <label for="current-password">Current Password</label>
+                            <input type="password" id="current-password" name="currentPassword" required autocomplete="current-password">
+                            <div class="error-text" id="current-password-error"></div>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="new-password">New Password</label>
+                            <input type="password" id="new-password" name="newPassword" required minlength="8" autocomplete="new-password">
+                            <div class="password-strength" id="password-strength"></div>
+                            <div class="error-text" id="new-password-error"></div>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="confirm-password">Confirm New Password</label>
+                            <input type="password" id="confirm-password" name="confirmPassword" required autocomplete="new-password">
+                            <div class="error-text" id="confirm-password-error"></div>
+                        </div>
+                        
+                        <div class="form-actions">
+                            <button type="submit">Update Password</button>
+                            <button type="button" id="cancel-password-change">Cancel</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script src="js/admin.js"></script>
+</body>
+</html>
